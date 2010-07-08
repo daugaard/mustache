@@ -2,14 +2,14 @@ $LOAD_PATH.unshift 'lib'
 require 'mustache/version'
 
 Gem::Specification.new do |s|
-  s.name              = "mustache"
+  s.name              = "mustache-prime-edition"
   s.version           = Mustache::Version
   s.date              = Time.now.strftime('%Y-%m-%d')
   s.summary           =
-        "Mustache is a framework-agnostic way to render logic-free views."
-  s.homepage          = "http://github.com/defunkt/mustache"
-  s.email             = "chris@ozmm.org"
-  s.authors           = [ "Chris Wanstrath" ]
+        "Mustache Prime Edition is an extension of mustache for increased integration with Prime. Mustache is a framework-agnostic way to render logic-free views. Mustache Prime Edition is based on Mustache version 0.11.2."
+  s.homepage          = "http://github.com/daugaard/mustache"
+  s.email             = "sbd@ipvision.dk"
+  s.authors           = [ "Søren Blond Daugaard", "Chris Wanstrath" ]
   s.files             = %w( README.md Rakefile LICENSE )
   s.files            += Dir.glob("lib/**/*")
   s.files            += Dir.glob("bin/**/*")

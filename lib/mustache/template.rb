@@ -1,7 +1,7 @@
 require 'cgi'
 
-require 'mustache/parser'
-require 'mustache/generator'
+require File.dirname(__FILE__)+'/parser'
+require File.dirname(__FILE__)+'/generator'
 
 class Mustache
   # A Template represents a Mustache template. It compiles and caches

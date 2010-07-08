@@ -1,5 +1,8 @@
-require 'mustache/template'
-require 'mustache/context'
+require File.dirname(__FILE__)+ '/mustache/template'
+require File.dirname(__FILE__)+ '/mustache/context'
+
+puts "Fetching Mustache Prime Edition"
+
 
 # Mustache is the base class from which your Mustache subclasses
 # should inherit (though it can be used on its own).

@@ -81,28 +81,101 @@ class Mustache
     #
     # If no second parameter is passed (or raise_on_context_miss is
     # set to true), will raise a ContextMiss exception on miss.
-    def fetch(name, default = :__raise)
-      @stack.each do |frame|
-        # Prevent infinite recursion.
-        next if frame == self
+    def fetch( name, default ) 
+					
+			@stack.each do |frame|
+		    	
+		    	# Prevent infinite recursion
+		    	if( frame.is_a?(Mustache) && frame.context == self) 
+		    		next
+		    	end
+		    
+		    	if frame.is_a?(Prime::Models::Document)
+					
+					model = Prime::Models::Model.get(frame['model']).latest
+					
+					# Find field and figure out what type it is
+					model['fields'].each do |field|
+						if( field["name"] == name || field["name"] == name.to_s )
+							if( field["type"] == "reference" )
+								# We should do some resolving of the reference!
+								frame['content'][name] = Prime::Models::Document.get(frame['content'][name.to_s])
+							elsif field["type"] == "list" && field["list_type"]["type"] == "reference"
+								# We should do some resolving of the list in question!
+								old_list = frame['content'][name.to_s]
+								new_list = Array.new
+								old_list.each do |list_item|
+									new_list.push( Prime::Models::Document.get(list_item) )
+								end unless not old_list.is_a? Array	
+								frame['content'][name.to_s] = new_list					
+							elsif field['type'] == "nested"
+								puts "!!#{name} is nested!!"
+								frame['content'][name.to_s] = frame['content'][name.to_s].merge( {'__type' => "nested", "__model" => frame['model'], '__fieldname' => name.to_s}	)
+								puts frame['content'][name.to_s].inspect
+							end
+						end
+					end				
+					frame_data = frame['content']
+					frame_data['_id'] = frame['_id']
+				
+				elsif frame['__type'] && frame['__type'] == "nested"
+					
+					model = Prime::Models::Model.get(frame['__model']).latest
+					
+					nested_fields = Array.new
+					
+					model['fields'].each do |field|
+						if( field["name"] == frame['__fieldname'] )
+							nested_fields = field["fields"]
+						end
+					end
+					
+					nested_fields.each do |field|
+						if( field["name"] == name || field["name"] == name.to_s )
+							if( field["type"] == "reference" )
+								# We should do some resolving of the reference!
+								frame[name.to_s] = Prime::Models::Document.get(frame[name.to_s])
+							elsif field["type"] == "list" && field["list_type"]["type"] == "reference"
+								# We should do some resolving of the list in question!
+								old_list = frame[name.to_s]
+								new_list = Array.new
+								old_list.each do |list_item|
+									new_list.push( Prime::Models::Document.get(list_item) )
+								end unless not old_list.is_a? Array	
+								frame[name.to_s] = new_list					
+							elsif field['type'] == "nested"
+								frame[name.to_s] = frame[name.to_s].merge( {'__type' => "nested", "__model" => frame['model'], '__fieldname' => name.to_s}	)
+							end
+						end
+					end
+					
+					frame_data = frame
+				
+				else 
+				
+					frame_data = frame
+				
+				end
+				
+		    	# Is this frame a hash?
+		    	hash = frame_data.respond_to?(:has_key?)
+				
+		    	if hash && frame_data.has_key?(name)
+		      		return frame_data[name]
+		    	elsif hash && frame_data.has_key?(name.to_s)
+		      		return frame_data[name.to_s]
+		    	elsif !hash && frame_data.respond_to?(name)
+		      		return frame_data.__send__(name)
+		    	end
 
-        # Is this frame a hash?
-        hash = frame.respond_to?(:has_key?)
+		  	end
 
-        if hash && frame.has_key?(name)
-          return frame[name]
-        elsif hash && frame.has_key?(name.to_s)
-          return frame[name.to_s]
-        elsif !hash && frame.respond_to?(name)
-          return frame.__send__(name)
-        end
-      end
+		  	if default == :__raise || mustache_in_stack.raise_on_context_miss?
+		    	raise ContextMiss.new("Can't find #{name} in #{@stack.inspect}")
+		  	else
+		    	default
+		  	end
 
-      if default == :__raise || mustache_in_stack.raise_on_context_miss?
-        raise ContextMiss.new("Can't find #{name} in #{@stack.inspect}")
-      else
-        default
-      end
-    end
+		end
   end
 end
