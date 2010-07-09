@@ -86,7 +86,7 @@ class Mustache
 			@stack.each do |frame|
 		    	
 		    	# Prevent infinite recursion
-		    	if( frame.is_a?(Mustache) && frame.context == self) 
+		    	if( (frame.is_a?(Mustache) && frame.context == self) || (frame.is_a?(Mustache::Context) && frame == self)) 
 		    		next
 		    	end
 		    
@@ -99,19 +99,23 @@ class Mustache
 						if( field["name"] == name || field["name"] == name.to_s )
 							if( field["type"] == "reference" )
 								# We should do some resolving of the reference!
-								frame['content'][name] = Prime::Models::Document.get(frame['content'][name.to_s])
+								if( !frame[name.to_s].is_a? Prime::Models::Document )
+									frame['content'][name] = Prime::Models::Document.get(frame['content'][name.to_s])
+								end
 							elsif field["type"] == "list" && field["list_type"]["type"] == "reference"
 								# We should do some resolving of the list in question!
 								old_list = frame['content'][name.to_s]
 								new_list = Array.new
 								old_list.each do |list_item|
-									new_list.push( Prime::Models::Document.get(list_item) )
+									if( !list_item.is_a? Prime::Models::Document ) 
+										new_list.push( Prime::Models::Document.get(list_item) )
+									else
+										new_list.push( list_item )
+									end
 								end unless not old_list.is_a? Array	
 								frame['content'][name.to_s] = new_list					
 							elsif field['type'] == "nested"
-								puts "!!#{name} is nested!!"
 								frame['content'][name.to_s] = frame['content'][name.to_s].merge( {'__type' => "nested", "__model" => frame['model'], '__fieldname' => name.to_s}	)
-								puts frame['content'][name.to_s].inspect
 							end
 						end
 					end				
@@ -134,13 +138,19 @@ class Mustache
 						if( field["name"] == name || field["name"] == name.to_s )
 							if( field["type"] == "reference" )
 								# We should do some resolving of the reference!
-								frame[name.to_s] = Prime::Models::Document.get(frame[name.to_s])
+								if( !frame[name.to_s].is_a? Prime::Models::Document )
+									frame[name.to_s] = Prime::Models::Document.get(frame[name.to_s])
+								end
 							elsif field["type"] == "list" && field["list_type"]["type"] == "reference"
 								# We should do some resolving of the list in question!
 								old_list = frame[name.to_s]
 								new_list = Array.new
 								old_list.each do |list_item|
-									new_list.push( Prime::Models::Document.get(list_item) )
+									if( !list_item.is_a? Prime::Models::Document ) 
+										new_list.push( Prime::Models::Document.get(list_item) )
+									else
+										new_list.push( list_item )
+									end	
 								end unless not old_list.is_a? Array	
 								frame[name.to_s] = new_list					
 							elsif field['type'] == "nested"

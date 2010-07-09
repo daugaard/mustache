@@ -1,9 +1,6 @@
 require File.dirname(__FILE__)+ '/mustache/template'
 require File.dirname(__FILE__)+ '/mustache/context'
 
-puts "Fetching Mustache Prime Edition"
-
-
 # Mustache is the base class from which your Mustache subclasses
 # should inherit (though it can be used on its own).
 #
@@ -106,7 +103,16 @@ class Mustache
   #
   # Call `render` if you need to process it.
   def self.partial(name)
-    File.read("#{template_path}/#{name}.#{template_extension}")
+  	if File.exists?("#{template_path}/#{name}.#{template_extension}")
+  		File.read("#{template_path}/#{name}.#{template_extension}")
+  	else
+    	m = Prime::Models::Template.by_name( :key => name ) 
+    	if !m.empty? 
+    		m.first['body'] 
+    	else
+    		raise "Cannot find template #{name} as template file or prime template."
+    	end
+    end
   end
 
   # Override this in your subclass if you want to do fun things like
